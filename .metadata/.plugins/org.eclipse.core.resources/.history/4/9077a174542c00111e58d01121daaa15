@@ -1,0 +1,24 @@
+package com.mentorplatform.dto;
+
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+@Data
+public class SessionRequestDTO {
+
+    @NotNull
+    private Long matchId;
+
+    @NotNull
+    private LocalDateTime startTime;
+
+    @NotNull
+    private LocalDateTime endTime;
+
+    @NotBlank
+    private String meetingLink;
+}

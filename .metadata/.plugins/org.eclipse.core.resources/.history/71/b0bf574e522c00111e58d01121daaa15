@@ -1,0 +1,56 @@
+package com.mentorplatform.service.impl;
+
+import java.time.LocalDateTime;
+
+import org.springframework.stereotype.Service;
+
+import com.mentorplatform.dto.MatchResponseDTO;
+import com.mentorplatform.exception.InvalidOperationException;
+import com.mentorplatform.exception.ResourceNotFoundException;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.User;
+import com.mentorplatform.model.enums.MatchStatus;
+import com.mentorplatform.model.enums.Role;
+import com.mentorplatform.repository.MentorshipMatchRepository;
+import com.mentorplatform.repository.UserRepository;
+import com.mentorplatform.service.MentorshipMatchService;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class MentorshipMatchServiceImpl 
+        implements MentorshipMatchService {
+
+    private final UserRepository userRepository;
+    private final MentorshipMatchRepository matchRepository;
+    private final Model
+
+    @Override
+    public MatchResponseDTO createMatch(Long mentorId, Long menteeId) {
+
+        User mentor = userRepository.findById(mentorId)
+                .orElseThrow(() -> 
+                new ResourceNotFoundException("Mentor not found"));
+
+        User mentee = userRepository.findById(menteeId)
+                .orElseThrow(() -> 
+                new ResourceNotFoundException("Mentor not found"));
+
+        if (mentor.getRole() != Role.MENTOR) {
+            throw new InvalidOperationException("User is not a mentor");
+        }
+
+        if (mentee.getRole() != Role.MENTEE) {
+            throw new InvalidOperationException("User is not a mentee");
+        }
+
+        MentorshipMatch match = new MentorshipMatch();
+        match.setMentor(mentor);
+        match.setMentee(mentee);
+        match.setStatus(MatchStatus.ACTIVE);
+        match.setMatchedAt(LocalDateTime.now());
+
+        return modelMapper.map(match, MatchResponseDTO.class);
+    }
+}

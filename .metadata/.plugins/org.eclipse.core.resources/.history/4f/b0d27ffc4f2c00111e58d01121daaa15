@@ -1,0 +1,5 @@
+package com.mentorplatform.exception;
+
+public class ResourceNotFoundException {
+	
+}

@@ -1,0 +1,16 @@
+package com.mentorplatform.dto;
+
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+public class SessionResponseDTO {
+
+    private Long id;
+    private Long matchId;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private String meetingLink;
+    private String status;
+}

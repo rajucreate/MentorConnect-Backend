@@ -1,0 +1,20 @@
+package com.mentorplatform.repository;
+
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.Session;
+
+public interface SessionRepository extends JpaRepository<Session, Long> {
+	List<Session> findByMatchId(Long matchId);
+	
+	List<Session> findByMatchAndStartTimeLessThanAndEndTimeGreaterThan(
+	        MentorshipMatch match,
+	        LocalDateTime endTime,
+	        LocalDateTime startTime
+	);
+}

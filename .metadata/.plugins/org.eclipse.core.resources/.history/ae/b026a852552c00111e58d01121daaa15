@@ -1,0 +1,10 @@
+package com.mentorplatform.service;
+
+public interface ProgressService {
+
+    ProgressResponseDTO createProgress(ProgressRequestDTO request);
+
+    ProgressResponseDTO updateProgress(Long progressId, ProgressRequestDTO request);
+
+    List<ProgressResponseDTO> getProgressByMatch(Long matchId);
+}
