@@ -1,10 +1,15 @@
 package com.mentorplatform.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.mentorplatform.dto.SessionRequestDTO;
 import com.mentorplatform.dto.SessionResponseDTO;
+import com.mentorplatform.model.User;
+import com.mentorplatform.repository.UserRepository;
 import com.mentorplatform.service.SessionService;
 
 import jakarta.validation.Valid;
@@ -16,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class SessionController {
 
     private final SessionService sessionService;
+    private final UserRepository userRepository;
 
     @PostMapping("/schedule")
     public ResponseEntity<SessionResponseDTO> scheduleSession(
@@ -29,5 +35,20 @@ public class SessionController {
         );
 
         return ResponseEntity.ok(session);
+    }
+    @PreAuthorize("hasRole('MENTEE')")
+    @PostMapping("/book")
+    public ResponseEntity<String> bookSession(
+            @Valid @RequestBody SessionRequestDTO request,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ResponseEntity.ok(
+                sessionService.bookSession(user.getId(), request)
+        );
     }
 }

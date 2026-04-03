@@ -1,0 +1,90 @@
+package com.mentorplatform.config;
+
+import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.mentorplatform.dto.*;
+import com.mentorplatform.model.*;
+
+@Configuration
+public class ModelMapperConfig {
+
+    @Bean
+    public ModelMapper modelMapper() {
+
+        ModelMapper mapper = new ModelMapper();
+
+        // 🔥 Global Configuration
+        mapper.getConfiguration()
+                .setMatchingStrategy(MatchingStrategies.STRICT)
+                .setSkipNullEnabled(true);
+==
+        mapper.createTypeMap(User.class, UserResponseDTO.class)
+                .implicitMappings();
+
+        mapper.createTypeMap(MentorshipMatch.class, MatchResponseDTO.class)
+                .addMappings(m -> {
+
+                    // Mentor fields
+                    m.map(src -> src.getMentor() != null ? src.getMentor().getId() : null,
+                            MatchResponseDTO::setMentorId);
+
+                    m.map(src -> src.getMentor() != null ? src.getMentor().getName() : null,
+                            MatchResponseDTO::setMentorName);
+
+                    m.map(src -> src.getMentor() != null ? src.getMentor().getEmail() : null,
+                            MatchResponseDTO::setMentorEmail);
+
+                    // Mentee fields
+                    m.map(src -> src.getMentee() != null ? src.getMentee().getId() : null,
+                            MatchResponseDTO::setMenteeId);
+
+                    m.map(src -> src.getMentee() != null ? src.getMentee().getName() : null,
+                            MatchResponseDTO::setMenteeName);
+
+                    m.map(src -> src.getMentee() != null ? src.getMentee().getEmail() : null,
+                            MatchResponseDTO::setMenteeEmail);
+
+                    // Status enum → String
+                    m.map(src -> src.getStatus() != null ? src.getStatus().name() : null,
+                            MatchResponseDTO::setStatus);
+
+                    // 🚫 Prevent unwanted nested mapping
+                    m.skip(MatchResponseDTO::setMentor);
+                    m.skip(MatchResponseDTO::setMentee);
+                })
+                .implicitMappings();
+
+        // =========================================================
+        // ✅ Session → SessionResponseDTO
+        // =========================================================
+        mapper.createTypeMap(Session.class, SessionResponseDTO.class)
+                .addMappings(m -> {
+
+                    // Match → matchId
+                    m.map(src -> src.getMatch() != null ? src.getMatch().getId() : null,
+                            SessionResponseDTO::setMatchId);
+
+                    // Enum → String
+                    m.map(src -> src.getStatus() != null ? src.getStatus().name() : null,
+                            SessionResponseDTO::setStatus);
+                })
+                .implicitMappings();
+
+        // =========================================================
+        // ✅ Progress → ProgressResponseDTO
+        // =========================================================
+        mapper.createTypeMap(Progress.class, ProgressResponseDTO.class)
+                .addMappings(m -> {
+
+                    // Match → matchId
+                    m.map(src -> src.getMatch() != null ? src.getMatch().getId() : null,
+                            ProgressResponseDTO::setMatchId);
+                })
+                .implicitMappings();
+
+        return mapper;
+    }
+}

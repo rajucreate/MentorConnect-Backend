@@ -1,0 +1,5 @@
+package com.mentorplatform.util;
+
+public class JwtUtil {
+
+}

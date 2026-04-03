@@ -5,54 +5,76 @@ import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.mentorplatform.dto.MatchResponseDTO;
-import com.mentorplatform.dto.ProgressResponseDTO;
-import com.mentorplatform.dto.SessionResponseDTO;
-import com.mentorplatform.model.MentorshipMatch;
-import com.mentorplatform.model.Progress;
-import com.mentorplatform.model.Session;
+import com.mentorplatform.dto.*;
+import com.mentorplatform.model.*;
 
 @Configuration
 public class ModelMapperConfig {
 
     @Bean
     public ModelMapper modelMapper() {
+
         ModelMapper mapper = new ModelMapper();
 
+        // 🔥 Global Configuration
         mapper.getConfiguration()
                 .setMatchingStrategy(MatchingStrategies.STRICT)
                 .setSkipNullEnabled(true);
 
-        // Explicit User → UserResponseDTO mapping
-        mapper.typeMap(
-                com.mentorplatform.model.User.class,
-                com.mentorplatform.dto.UserResponseDTO.class
-        );
+        mapper.createTypeMap(User.class, UserResponseDTO.class)
+                .implicitMappings();
 
-        // MentorshipMatch → MatchResponseDTO
-        mapper.typeMap(MentorshipMatch.class, MatchResponseDTO.class)
+        mapper.createTypeMap(MentorshipMatch.class, MatchResponseDTO.class)
                 .addMappings(m -> {
-                    m.map(src -> src.getMentor(), MatchResponseDTO::setMentor);
-                    m.map(src -> src.getMentee(), MatchResponseDTO::setMentee);
-                    m.map(src -> src.getStatus().name(), MatchResponseDTO::setStatus);
-                });
 
-        // Session → SessionResponseDTO
-        mapper.typeMap(Session.class, SessionResponseDTO.class)
+                    // Mentor fields
+                    m.map(src -> src.getMentor() != null ? src.getMentor().getId() : null,
+                            MatchResponseDTO::setMentorId);
+
+                    m.map(src -> src.getMentor() != null ? src.getMentor().getName() : null,
+                            MatchResponseDTO::setMentorName);
+
+                    m.map(src -> src.getMentor() != null ? src.getMentor().getEmail() : null,
+                            MatchResponseDTO::setMentorEmail);
+
+                    // Mentee fields
+                    m.map(src -> src.getMentee() != null ? src.getMentee().getId() : null,
+                            MatchResponseDTO::setMenteeId);
+
+                    m.map(src -> src.getMentee() != null ? src.getMentee().getName() : null,
+                            MatchResponseDTO::setMenteeName);
+
+                    m.map(src -> src.getMentee() != null ? src.getMentee().getEmail() : null,
+                            MatchResponseDTO::setMenteeEmail);
+
+                    // Status enum → String
+                    m.map(src -> src.getStatus() != null ? src.getStatus().name() : null,
+                            MatchResponseDTO::setStatus);
+
+                })
+                .implicitMappings();
+
+        mapper.createTypeMap(Session.class, SessionResponseDTO.class)
                 .addMappings(m -> {
-                    m.map(src ->
-                                    src.getMatch() != null ? src.getMatch().getId() : null,
+
+                    // Match → matchId
+                    m.map(src -> src.getMatch() != null ? src.getMatch().getId() : null,
                             SessionResponseDTO::setMatchId);
-                    m.map(src -> src.getStatus().name(), SessionResponseDTO::setStatus);
-                });
-        
-        mapper.typeMap(Progress.class, ProgressResponseDTO.class)
-        .addMappings(m -> {
-            m.map(src -> 
-                src.getMatch() != null ? src.getMatch().getId() : null,
-                ProgressResponseDTO::setMatchId
-            );
-        });
+
+                    // Enum → String
+                    m.map(src -> src.getStatus() != null ? src.getStatus().name() : null,
+                            SessionResponseDTO::setStatus);
+                })
+                .implicitMappings();
+
+        mapper.createTypeMap(Progress.class, ProgressResponseDTO.class)
+                .addMappings(m -> {
+
+                    // Match → matchId
+                    m.map(src -> src.getMatch() != null ? src.getMatch().getId() : null,
+                            ProgressResponseDTO::setMatchId);
+                })
+                .implicitMappings();
 
         return mapper;
     }

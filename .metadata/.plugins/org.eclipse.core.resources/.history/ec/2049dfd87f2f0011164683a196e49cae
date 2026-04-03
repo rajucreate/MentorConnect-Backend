@@ -1,0 +1,44 @@
+package com.mentorplatform.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.mentorplatform.dto.SessionRequestDTO;
+import com.mentorplatform.exception.InvalidOperationException;
+import com.mentorplatform.exception.ResourceNotFoundException;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.Session;
+import com.mentorplatform.repository.MentorshipMatchRepository;
+import com.mentorplatform.repository.SessionRepository;
+import com.mentorplatform.service.SessionService;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class SessionServiceImpl implements SessionService {
+
+    private final MentorshipMatchRepository mentorshipMatchRepository;
+    private final SessionRepository sessionRepository;
+
+    @Override
+    public String bookSession(Long userId, SessionRequestDTO request) {
+
+        MentorshipMatch match = mentorshipMatchRepository.findById(request.getMatchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+        // ✅ Ensure logged-in user is mentee
+        if (!match.getMentee().getId().equals(userId)) {
+            throw new InvalidOperationException("You are not authorized for this match");
+        }
+
+        Session session = new Session();
+        session.setMatch(match);
+        session.setStartTime(request.getStartTime());
+        session.setEndTime(request.getEndTime());
+        session.setMeetingLink(request.getMeetingLink());
+
+        sessionRepository.save(session);
+
+        return "Session booked successfully";
+    }
+}

@@ -2,14 +2,20 @@ package com.mentorplatform.dto;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 public class MatchResponseDTO {
 
     private Long id;
-    private UserResponseDTO mentor;
-    private UserResponseDTO mentee;
+
+    // Mentor fields
+    private Long mentorId;
+    private String mentorName;
+    private String mentorEmail;
+
+    // Mentee fields
+    private Long menteeId;
+    private String menteeName;
+    private String menteeEmail;
+
     private String status;
-    private LocalDateTime matchedAt;
 }

@@ -1,0 +1,16 @@
+package com.mentorplatform.dto;
+
+import com.mentorplatform.model.enums.Role;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class RegisterRequestDTO {
+	@NotBlank
+    private String name;
+	
+    private String email;
+    private String password;
+    private Role role; // USER / ADMIN
+}

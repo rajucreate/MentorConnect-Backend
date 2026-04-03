@@ -1,0 +1,28 @@
+package com.mentorplatform.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+
+public class CustomUserDetailsService implements UserDetailsService {
+
+    private final UserRepository userRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        return org.springframework.security.core.userdetails.User
+                .builder()
+                .username(user.getEmail())
+                .password(user.getPassword())
+                .roles(user.getRole().name())
+                .build();
+    }
+}

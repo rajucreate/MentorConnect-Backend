@@ -1,0 +1,18 @@
+package com.mentorplatform.config;
+
+@RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthService authService;
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponseDTO> login(
+            @RequestBody LoginRequestDTO request) {
+
+        String token = authService.login(request);
+
+        return ResponseEntity.ok(new AuthResponseDTO(token));
+    }
+}

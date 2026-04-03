@@ -1,0 +1,37 @@
+package com.mentorplatform.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.mentorplatform.auth.dto.AuthResponseDTO;
+import com.mentorplatform.auth.dto.LoginRequestDTO;
+import com.mentorplatform.dto.RegisterRequestDTO;
+import com.mentorplatform.service.AuthService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthService authService;
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponseDTO> login(
+            @RequestBody LoginRequestDTO request) {
+
+        String token = authService.login(request);
+
+        return ResponseEntity.ok(new AuthResponseDTO(token));
+    }
+    
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequestDTO request) {
+        return ResponseEntity.ok(authService.register(request));
+    }
+}

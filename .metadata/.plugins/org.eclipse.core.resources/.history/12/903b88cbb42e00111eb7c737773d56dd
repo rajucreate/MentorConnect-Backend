@@ -1,0 +1,5 @@
+package com.mentorplatform.auth.dto;
+
+public class LoginRequestDTO {
+
+}

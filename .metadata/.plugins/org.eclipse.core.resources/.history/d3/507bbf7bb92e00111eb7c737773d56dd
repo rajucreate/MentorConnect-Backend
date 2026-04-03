@@ -1,0 +1,70 @@
+package com.mentorplatform.config;
+
+import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import com.mentorplatform.dto.MatchResponseDTO;
+import com.mentorplatform.dto.ProgressResponseDTO;
+import com.mentorplatform.dto.SessionResponseDTO;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.Progress;
+import com.mentorplatform.model.Session;
+
+@Configuration
+public class ModelMapperConfig {
+
+    @Bean
+    public ModelMapper modelMapper() {
+        ModelMapper mapper = new ModelMapper();
+        mapper.getConfiguration()
+                .setMatchingStrategy(MatchingStrategies.STRICT)
+                .setSkipNullEnabled(true);
+
+        // User → UserResponseDTO
+        mapper.typeMap(
+                com.mentorplatform.model.User.class,
+                com.mentorplatform.dto.UserResponseDTO.class
+        );
+
+        // ✅ MentorshipMatch → MatchResponseDTO
+        // createTypeMap() creates an EMPTY map (no implicit mappings yet)
+        mapper.createTypeMap(MentorshipMatch.class, MatchResponseDTO.class)
+                .addMappings(m -> {
+                    // Explicitly map mentor/mentee nested fields
+                    m.map(src -> src.getMentor().getId(),    MatchResponseDTO::setMentorId);
+                    m.map(src -> src.getMentor().getName(),  MatchResponseDTO::setMentorName);
+                    m.map(src -> src.getMentor().getEmail(), MatchResponseDTO::setMentorEmail);
+
+                    m.map(src -> src.getMentee().getId(),    MatchResponseDTO::setMenteeId);
+                    m.map(src -> src.getMentee().getName(),  MatchResponseDTO::setMenteeName);
+                    m.map(src -> src.getMentee().getEmail(), MatchResponseDTO::setMenteeEmail);
+
+                    m.map(src -> src.getStatus().name(),     MatchResponseDTO::setStatus);
+
+                    // ✅ Skip the full objects to prevent implicit mapping conflict
+                    m.<Object>skip(MatchResponseDTO::setMentor);
+                    m.<Object>skip(MatchResponseDTO::setMentee);
+                })
+                .implicitMappings(); // ✅ runs AFTER addMappings, respects skips
+
+        // Session → SessionResponseDTO
+        mapper.createTypeMap(Session.class, SessionResponseDTO.class)
+                .addMappings(m -> {
+                    m.map(src -> src.getMatch() != null ? src.getMatch().getId() : null,
+                            SessionResponseDTO::setMatchId);
+                    m.map(src -> src.getStatus().name(), SessionResponseDTO::setStatus);
+                })
+                .implicitMappings();
+
+        // Progress → ProgressResponseDTO
+        mapper.createTypeMap(Progress.class, ProgressResponseDTO.class)
+                .addMappings(m -> {
+                    m.map(src -> src.getMatch() != null ? src.getMatch().getId() : null,
+                            ProgressResponseDTO::setMatchId);
+                })
+                .implicitMappings();
+
+        return mapper;
+    }
+}

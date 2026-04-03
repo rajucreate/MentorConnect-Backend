@@ -6,8 +6,10 @@ import java.util.List;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import com.mentorplatform.dto.SessionRequestDTO;
 import com.mentorplatform.dto.SessionResponseDTO;
 import com.mentorplatform.exception.InvalidOperationException;
+import com.mentorplatform.exception.ResourceNotFoundException;
 import com.mentorplatform.model.MentorshipMatch;
 import com.mentorplatform.model.Session;
 import com.mentorplatform.model.enums.MatchStatus;
@@ -30,7 +32,7 @@ public class SessionServiceImpl implements SessionService {
 	public SessionResponseDTO scheduleSession(Long matchId, LocalDateTime startTime, LocalDateTime endTime, String meetingLink) {
 
 	    MentorshipMatch match = matchRepository.findById(matchId)
-	            .orElseThrow(() -> new RuntimeException("Match not found"));
+	            .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
 	    
 
 	    if (match.getStatus() != MatchStatus.ACTIVE) {
@@ -63,5 +65,26 @@ public class SessionServiceImpl implements SessionService {
 
 	    return modelMapper.map(savedSession, SessionResponseDTO.class);
 	}
+	
+	
+	 public String bookSession(Long userId, SessionRequestDTO request) {
 
+	        MentorshipMatch match = matchRepository.findById(request.getMatchId())
+	                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+	        // ✅ Ensure logged-in user is mentee
+	        if (!match.getMentee().getId().equals(userId)) {
+	            throw new InvalidOperationException("You are not authorized for this match");
+	        }
+
+	        Session session = new Session();
+	        session.setMatch(match);
+	        session.setStartTime(request.getStartTime());
+	        session.setEndTime(request.getEndTime());
+	        session.setMeetingLink(request.getMeetingLink());
+
+	        sessionRepository.save(session);
+
+	        return "Session booked successfully";
+	    }
 }

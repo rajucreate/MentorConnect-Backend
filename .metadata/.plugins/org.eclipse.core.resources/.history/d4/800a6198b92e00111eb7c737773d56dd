@@ -1,0 +1,69 @@
+package com.mentorplatform.config;
+
+import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import com.mentorplatform.dto.MatchResponseDTO;
+import com.mentorplatform.dto.ProgressResponseDTO;
+import com.mentorplatform.dto.SessionResponseDTO;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.Progress;
+import com.mentorplatform.model.Session;
+
+@Configuration
+public class ModelMapperConfig {
+
+    @Bean
+    public ModelMapper modelMapper() {
+        ModelMapper mapper = new ModelMapper();
+        mapper.getConfiguration()
+                .setMatchingStrategy(MatchingStrategies.STRICT)
+                .setSkipNullEnabled(true);
+
+        // User → UserResponseDTO
+        mapper.typeMap(
+                com.mentorplatform.model.User.class,
+                com.mentorplatform.dto.UserResponseDTO.class
+        );
+
+        // ✅ MentorshipMatch → MatchResponseDTO
+        // createTypeMap() creates an EMPTY map (no implicit mappings yet)
+        mapper.createTypeMap(MentorshipMatch.class, MatchResponseDTO.class)
+        .addMappings(m -> {
+            // ✅ Explicit <Long> for ID fields
+            m.<Long>map(src -> src.getMentor().getId(),    MatchResponseDTO::setMentorId);
+            m.<String>map(src -> src.getMentor().getName(),  MatchResponseDTO::setMentorName);
+            m.<String>map(src -> src.getMentor().getEmail(), MatchResponseDTO::setMentorEmail);
+
+            m.<Long>map(src -> src.getMentee().getId(),    MatchResponseDTO::setMenteeId);
+            m.<String>map(src -> src.getMentee().getName(),  MatchResponseDTO::setMenteeName);
+            m.<String>map(src -> src.getMentee().getEmail(), MatchResponseDTO::setMenteeEmail);
+
+            m.<String>map(src -> src.getStatus().name(),   MatchResponseDTO::setStatus);
+            m.<String>map(src -> src.getMatchedAt() != null ?
+                            src.getMatchedAt().toString() : null,
+                    MatchResponseDTO::setMatchedAt);
+        })
+        .implicitMappings();// ✅ runs AFTER addMappings, respects skips
+
+        // Session → SessionResponseDTO
+        mapper.createTypeMap(Session.class, SessionResponseDTO.class)
+                .addMappings(m -> {
+                    m.map(src -> src.getMatch() != null ? src.getMatch().getId() : null,
+                            SessionResponseDTO::setMatchId);
+                    m.map(src -> src.getStatus().name(), SessionResponseDTO::setStatus);
+                })
+                .implicitMappings();
+
+        // Progress → ProgressResponseDTO
+        mapper.createTypeMap(Progress.class, ProgressResponseDTO.class)
+                .addMappings(m -> {
+                    m.map(src -> src.getMatch() != null ? src.getMatch().getId() : null,
+                            ProgressResponseDTO::setMatchId);
+                })
+                .implicitMappings();
+
+        return mapper;
+    }
+}
