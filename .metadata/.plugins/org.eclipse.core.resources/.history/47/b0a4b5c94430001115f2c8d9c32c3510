@@ -1,0 +1,6 @@
+package com.mentorplatform.service;
+
+public interface MatchingService {
+
+    void createMatch(Long mentorId, String menteeEmail);
+}

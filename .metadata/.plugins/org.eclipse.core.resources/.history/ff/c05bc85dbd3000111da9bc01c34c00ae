@@ -1,0 +1,5 @@
+package com.mentorplatform.service;
+
+public class EmailService {
+
+}

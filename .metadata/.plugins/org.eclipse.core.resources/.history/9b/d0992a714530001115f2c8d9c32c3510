@@ -1,0 +1,27 @@
+package com.mentorplatform.service.impl;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.mentorplatform.dto.MatchingResponseDTO;
+import com.mentorplatform.model.User;
+import com.mentorplatform.model.enums.Role;
+import com.mentorplatform.repository.UserRepository;
+
+public class MatchingServiceImpl {
+    private final UserRepository userRepository;
+
+    public List<MatchingResponseDTO> findMentors() {
+
+        List<User> mentors = userRepository.findByRole(Role.MENTOR);
+
+        return mentors.stream()
+                .map(user -> new MatchingResponseDTO(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getRole()
+                ))
+                .collect(Collectors.toList());
+    }
+}

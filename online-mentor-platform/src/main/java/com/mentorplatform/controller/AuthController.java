@@ -23,15 +23,17 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(
-            @RequestBody LoginRequestDTO request) {
+            @Valid @RequestBody LoginRequestDTO request) {
 
         String token = authService.login(request);
-
         return ResponseEntity.ok(new AuthResponseDTO(token));
     }
-    
+
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequestDTO request) {
-        return ResponseEntity.ok(authService.register(request));
+    public ResponseEntity<String> register(
+            @Valid @RequestBody RegisterRequestDTO request) {
+
+        return ResponseEntity.status(201)
+                .body(authService.register(request));
     }
 }

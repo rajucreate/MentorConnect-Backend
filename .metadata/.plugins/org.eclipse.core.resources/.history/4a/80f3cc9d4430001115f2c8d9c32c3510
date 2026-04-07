@@ -1,0 +1,18 @@
+package com.mentorplatform.service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.mentorplatform.dto.MatchingResponseDTO;
+import com.mentorplatform.model.User;
+import com.mentorplatform.model.enums.Role;
+import com.mentorplatform.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+public interface MatchingService {
+
+	void createMatch(Long mentorId, String menteeEmail);
+}

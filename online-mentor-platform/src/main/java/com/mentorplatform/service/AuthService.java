@@ -1,63 +1,11 @@
 package com.mentorplatform.service;
 
-//import org.springframework.security.core.userdetails.User;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
 import com.mentorplatform.auth.dto.LoginRequestDTO;
-import com.mentorplatform.config.JwtUtil;
 import com.mentorplatform.dto.RegisterRequestDTO;
-import com.mentorplatform.exception.InvalidOperationException;
-import com.mentorplatform.exception.ResourceNotFoundException;
-import com.mentorplatform.model.User;
-import com.mentorplatform.repository.UserRepository;
 
-import lombok.RequiredArgsConstructor;
+public interface AuthService {
 
-@Service
-@RequiredArgsConstructor
-public class AuthService {
+    String login(LoginRequestDTO request);
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
-
-    public String login(LoginRequestDTO request) {
-
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new InvalidOperationException("Invalid credentials");
-        }
-
-        return jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-    }
-    
-    public String register(RegisterRequestDTO request) {
-
-        // Check if user already exists
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-        	throw new InvalidOperationException("Email already registered");
-        }
-
-        // Create new user
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-
-        // Encrypt password
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        user.setRole(request.getRole());
-
-        try {
-        	userRepository.save(user);
-        } catch (Exception e){
-        	e.printStackTrace();
-        }
-
-        return "User registered successfully";
-    }
+    String register(RegisterRequestDTO request);
 }

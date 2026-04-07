@@ -1,5 +1,0 @@
-package com.mentorplatform.dto;
-
-public class UserResponseDTO {
-
-}

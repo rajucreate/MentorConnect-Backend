@@ -1,0 +1,142 @@
+package com.mentorplatform.service.impl;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+
+import com.mentorplatform.dto.SessionRequestDTO;
+import com.mentorplatform.dto.SessionResponseDTO;
+import com.mentorplatform.exception.InvalidOperationException;
+import com.mentorplatform.exception.ResourceNotFoundException;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.Session;
+import com.mentorplatform.model.enums.MatchStatus;
+import com.mentorplatform.model.enums.SessionStatus;
+import com.mentorplatform.repository.MentorshipMatchRepository;
+import com.mentorplatform.repository.SessionRepository;
+import com.mentorplatform.service.SessionService;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class SessionServiceImpl implements SessionService {
+
+	private final MentorshipMatchRepository matchRepository;
+	private final SessionRepository sessionRepository;
+	private final ModelMapper modelMapper;
+
+	@Override
+	public SessionResponseDTO scheduleSession(Long matchId, LocalDateTime startTime, LocalDateTime endTime, String meetingLink) {
+
+	    MentorshipMatch match = matchRepository.findById(matchId)
+	            .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+	    
+
+	    if (match.getStatus() != MatchStatus.ACTIVE) {
+	        throw new InvalidOperationException("Match is not active");
+	    }
+
+	    if (endTime.isBefore(startTime)) {
+	        throw new InvalidOperationException("Invalid Session Time");
+	    }
+	    
+	    List<Session> conflicts = sessionRepository
+	            .findByMatchAndStartTimeLessThanAndEndTimeGreaterThan(
+	                    match,
+	                    endTime,
+	                    startTime
+	            );
+
+	    if (!conflicts.isEmpty()) {
+	        throw new InvalidOperationException("Session time overlaps with existing session");
+	    }
+
+	    Session session = new Session();
+	    session.setMatch(match);
+	    session.setStartTime(startTime);
+	    session.setEndTime(endTime);
+	    session.setMeetingLink(meetingLink);
+	    session.setStatus(SessionStatus.SCHEDULED);
+
+	    Session savedSession = sessionRepository.save(session);
+
+	    return modelMapper.map(savedSession, SessionResponseDTO.class);
+	}
+	
+	
+	 public String bookSession(Long userId, SessionRequestDTO request) {
+
+	        MentorshipMatch match = matchRepository.findById(request.getMatchId())
+	                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+	        // ✅ Ensure logged-in user is mentee
+	        if (!match.getMentee().getId().equals(userId)) {
+	            throw new InvalidOperationException("You are not authorized for this match");
+	        }
+
+	        Session session = new Session();
+	        session.setMatch(match);
+	        session.setStartTime(request.getStartTime());
+	        session.setEndTime(request.getEndTime());
+	        session.setMeetingLink(request.getMeetingLink());
+
+	        sessionRepository.save(session);
+
+	        return "Session booked successfully";
+	    }
+	 
+	    @Override
+	    public List<SessionResponseDTO> getMySessions(String email) {
+
+	        User user = userRepository.findByEmail(email)
+	                .orElseThrow(() -> new RuntimeException("User not found"));
+
+	        List<Session> sessions = sessionRepository.findByMatch_Mentee(user);
+
+	        return sessions.stream()
+	                .map(s -> new SessionResponseDTO(
+	                        s.getId(),
+	                        s.getMatch().getMentor().getName(),
+	                        s.getMatch().getMentee().getName(),
+	                        s.getScheduledAt(),
+	                        s.getStatus()
+	                ))
+	                .collect(Collectors.toList());
+	    }
+
+	    @Override
+	    public List<SessionResponseDTO> getMentorSessions(String email) {
+
+	        User user = userRepository.findByEmail(email)
+	                .orElseThrow(() -> new RuntimeException("User not found"));
+
+	        List<Session> sessions = sessionRepository.findByMatch_Mentor(user);
+
+	        return sessions.stream()
+	        		.map(s -> new SessionResponseDTO(
+	        		        s.getId(),
+	        		        s.getMatch().getMentor().getName(),
+	        		        s.getMatch().getMentee().getName(),
+	        		        s.getStartTime(),
+	        		        s.getEndTime(),
+	        		        s.getMeetingLink(),
+	        		        s.getStatus()
+	        		))
+	                .collect(Collectors.toList());
+	    }
+
+	    @Override
+	    public void updateSessionStatus(Long sessionId, String status) {
+
+	        Session session = sessionRepository.findById(sessionId)
+	                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+	        session.setStatus(status);
+
+	        sessionRepository.save(session);
+	    }
+}

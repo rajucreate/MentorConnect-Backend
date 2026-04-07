@@ -7,9 +7,9 @@ import com.mentorplatform.dto.ProgressResponseDTO;
 
 public interface ProgressService {
 
-    ProgressResponseDTO createProgress(ProgressRequestDTO request);
+    ProgressResponseDTO createProgress(String email, ProgressRequestDTO request);
 
-    ProgressResponseDTO updateProgress(Long progressId, ProgressRequestDTO request);
+    ProgressResponseDTO updateProgress(String email, Long progressId, ProgressRequestDTO request);
 
-    List<ProgressResponseDTO> getProgressByMatch(Long matchId);
+    List<ProgressResponseDTO> getProgressByMatch(String email, Long matchId);
 }

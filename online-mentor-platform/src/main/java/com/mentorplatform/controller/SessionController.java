@@ -1,14 +1,18 @@
 package com.mentorplatform.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.mentorplatform.dto.SessionRequestDTO;
 import com.mentorplatform.dto.SessionResponseDTO;
 import com.mentorplatform.model.User;
+import com.mentorplatform.model.enums.SessionStatus;
 import com.mentorplatform.repository.UserRepository;
 import com.mentorplatform.service.SessionService;
 
@@ -50,5 +54,38 @@ public class SessionController {
         return ResponseEntity.ok(
                 sessionService.bookSession(user.getId(), request)
         );
+    }
+    
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('MENTEE')")
+    public ResponseEntity<List<SessionResponseDTO>> getMySessions() {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+
+        return ResponseEntity.ok(sessionService.getMySessions(email));
+    }
+
+    // ✅ Mentor
+    @GetMapping("/mentor")
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<List<SessionResponseDTO>> getMentorSessions() {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+
+        return ResponseEntity.ok(sessionService.getMentorSessions(email));
+    }
+
+    // ✅ Update status
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('MENTOR','ADMIN')")
+    public ResponseEntity<String> updateStatus(
+            @PathVariable Long id,
+            @RequestParam SessionStatus status) {
+
+        sessionService.updateSessionStatus(id, status);
+
+        return ResponseEntity.ok("Session status updated");
     }
 }

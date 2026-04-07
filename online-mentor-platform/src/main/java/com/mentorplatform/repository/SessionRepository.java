@@ -8,13 +8,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.mentorplatform.model.MentorshipMatch;
 import com.mentorplatform.model.Session;
+import com.mentorplatform.model.User;
 
 public interface SessionRepository extends JpaRepository<Session, Long> {
-	List<Session> findByMatchId(Long matchId);
-	
+	List<Session> findByMatch_Mentee(User mentee);
+	List<Session> findByMatch_Mentor(User mentor);
 	List<Session> findByMatchAndStartTimeLessThanAndEndTimeGreaterThan(
 	        MentorshipMatch match,
 	        LocalDateTime endTime,
 	        LocalDateTime startTime
 	);
+    List<Session> findByMatchId(Long matchId);
 }

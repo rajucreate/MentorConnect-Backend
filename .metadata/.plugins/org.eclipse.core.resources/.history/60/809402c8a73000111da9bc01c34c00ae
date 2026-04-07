@@ -1,0 +1,18 @@
+package com.mentorplatform.service;
+
+import java.time.LocalDateTime;
+
+import com.mentorplatform.dto.SessionRequestDTO;
+import com.mentorplatform.dto.SessionResponseDTO;
+import com.mentorplatform.model.Session;
+
+public interface SessionService {
+
+	SessionResponseDTO scheduleSession(Long matchId, LocalDateTime startTime, LocalDateTime endTime, String meetingLink);
+	String bookSession(Long userId, SessionRequestDTO request);
+    List<SessionResponseDTO> getMySessions(String email);
+
+    List<SessionResponseDTO> getMentorSessions(String email);
+
+    void updateSessionStatus(Long sessionId, String status);
+}

@@ -1,0 +1,33 @@
+package com.mentorplatform.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.mentorplatform.dto.MatchResponseDTO;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.service.MatchingService;
+import com.mentorplatform.service.MentorshipMatchService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/admin")
+@RequiredArgsConstructor
+public class AdminController {
+	
+	   private final MatchingService matchService;
+
+	    @PostMapping("/match")
+	    public ResponseEntity<MatchResponseDTO> matchUsers(
+	            @RequestParam Long mentorId,
+	            @RequestParam Long menteeId) {
+
+	    	MatchResponseDTO match = 
+	            matchService.createMatch(mentorId, menteeId);
+
+	        return ResponseEntity.ok(match);
+	    }
+}

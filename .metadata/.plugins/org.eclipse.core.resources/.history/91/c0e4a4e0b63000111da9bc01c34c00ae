@@ -1,0 +1,90 @@
+package com.mentorplatform.service.impl;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+
+import com.mentorplatform.dto.ProgressRequestDTO;
+import com.mentorplatform.dto.ProgressResponseDTO;
+import com.mentorplatform.exception.ResourceNotFoundException;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.Progress;
+import com.mentorplatform.repository.MentorshipMatchRepository;
+import com.mentorplatform.repository.ProgressRepository;
+import com.mentorplatform.repository.UserRepository;
+import com.mentorplatform.service.ProgressService;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class ProgressServiceImpl implements ProgressService {
+
+    private final ProgressRepository progressRepository;
+    private final MentorshipMatchRepository matchRepository;
+    private final UserRepository userRepository;
+
+    // ✅ CREATE
+    @Override
+    public ProgressResponseDTO createProgress(ProgressRequestDTO request) {
+
+        MentorshipMatch match = matchRepository.findById(request.getMatchId())
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+
+        Progress progress = new Progress();
+        progress.setMatch(match);
+        progress.setGoal(request.getGoal());
+        progress.setCompleted(request.getCompleted() != null ? request.getCompleted() : false);
+        progress.setMentorNotes(request.getMentorNotes());
+        progress.setMenteeNotes(request.getMenteeNotes());
+        progress.setCreatedAt(LocalDateTime.now());
+
+        Progress saved = progressRepository.save(progress);
+
+        return mapToDTO(saved);
+    }
+
+    // ✅ UPDATE
+    @Override
+    public ProgressResponseDTO updateProgress(Long progressId, ProgressRequestDTO request) {
+
+        Progress progress = progressRepository.findById(progressId)
+                .orElseThrow(() -> new RuntimeException("Progress not found"));
+
+        progress.setGoal(request.getGoal());
+        progress.setCompleted(request.getCompleted());
+        progress.setMentorNotes(request.getMentorNotes());
+        progress.setMenteeNotes(request.getMenteeNotes());
+
+        Progress updated = progressRepository.save(progress);
+
+        return mapToDTO(updated);
+    }
+
+    // ✅ GET BY MATCH
+    @Override
+    public List<ProgressResponseDTO> getProgressByMatch(Long matchId) {
+
+        MentorshipMatch match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+
+        return progressRepository.findByMatch(match)
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    // 🔧 MAPPER
+    private ProgressResponseDTO mapToDTO(Progress p) {
+        ProgressResponseDTO dto = new ProgressResponseDTO();
+        dto.setId(p.getId());
+        dto.setMatchId(p.getMatch().getId());
+        dto.setGoal(p.getGoal());
+        dto.setCompleted(p.getCompleted());
+        dto.setMentorNotes(p.getMentorNotes());
+        dto.setMenteeNotes(p.getMenteeNotes());
+        return dto;
+    }
+}

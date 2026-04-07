@@ -1,5 +1,6 @@
 package com.mentorplatform.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
@@ -10,8 +11,10 @@ import com.mentorplatform.dto.ProgressResponseDTO;
 import com.mentorplatform.exception.ResourceNotFoundException;
 import com.mentorplatform.model.MentorshipMatch;
 import com.mentorplatform.model.Progress;
+import com.mentorplatform.model.User;
 import com.mentorplatform.repository.MentorshipMatchRepository;
 import com.mentorplatform.repository.ProgressRepository;
+import com.mentorplatform.repository.UserRepository;
 import com.mentorplatform.service.ProgressService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,54 +25,109 @@ public class ProgressServiceImpl implements ProgressService {
 
     private final ProgressRepository progressRepository;
     private final MentorshipMatchRepository matchRepository;
-    private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
 
+    // ====== CREATE (MENTOR ONLY) ======
     @Override
-    public ProgressResponseDTO createProgress(ProgressRequestDTO request) {
+    public ProgressResponseDTO createProgress(String email, ProgressRequestDTO request) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         MentorshipMatch match = matchRepository.findById(request.getMatchId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Match not found"));
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+
+        // 🔐 Only mentor of this match can create
+        if (!match.getMentor().getId().equals(user.getId())) {
+            throw new RuntimeException("Only mentor can create progress");
+        }
 
         Progress progress = new Progress();
         progress.setMatch(match);
         progress.setGoal(request.getGoal());
-        progress.setCompleted(request.getCompleted() != null ? request.getCompleted() : false);
+        progress.setCompleted(false); // default
         progress.setMentorNotes(request.getMentorNotes());
-        progress.setMenteeNotes(request.getMenteeNotes());
+        progress.setMenteeNotes(null);
 
         Progress saved = progressRepository.save(progress);
-
-        return modelMapper.map(saved, ProgressResponseDTO.class);
+        return map(saved);
     }
 
+    // ====== UPDATE (ROLE-SPLIT) ======
     @Override
-    public ProgressResponseDTO updateProgress(Long progressId, ProgressRequestDTO request) {
+    public ProgressResponseDTO updateProgress(String email, Long progressId, ProgressRequestDTO request) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Progress progress = progressRepository.findById(progressId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Progress not found"));
+                .orElseThrow(() -> new RuntimeException("Progress not found"));
 
-        progress.setGoal(request.getGoal());
-        progress.setCompleted(request.getCompleted());
-        progress.setMentorNotes(request.getMentorNotes());
-        progress.setMenteeNotes(request.getMenteeNotes());
+        MentorshipMatch match = progress.getMatch();
+
+        boolean isMentor = match.getMentor().getId().equals(user.getId());
+        boolean isMentee = match.getMentee().getId().equals(user.getId());
+
+        if (!isMentor && !isMentee) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        // 🎯 Role-based field control
+        if (isMentor) {
+            // Mentor can update goal + mentorNotes
+            if (request.getGoal() != null) {
+                progress.setGoal(request.getGoal());
+            }
+            if (request.getMentorNotes() != null) {
+                progress.setMentorNotes(request.getMentorNotes());
+            }
+        }
+
+        if (isMentee) {
+            // Mentee can update completion + menteeNotes
+            if (request.getCompleted() != null) {
+                progress.setCompleted(request.getCompleted());
+            }
+            if (request.getMenteeNotes() != null) {
+                progress.setMenteeNotes(request.getMenteeNotes());
+            }
+        }
 
         Progress updated = progressRepository.save(progress);
-
-        return modelMapper.map(updated, ProgressResponseDTO.class);
+        return map(updated);
     }
 
+    // ====== VIEW (ONLY PARTICIPANTS) ======
     @Override
-    public List<ProgressResponseDTO> getProgressByMatch(Long matchId) {
+    public List<ProgressResponseDTO> getProgressByMatch(String email, Long matchId) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         MentorshipMatch match = matchRepository.findById(matchId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Match not found"));
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+
+        // 🔐 Only mentor or mentee of this match can view
+        if (!match.getMentor().getId().equals(user.getId()) &&
+            !match.getMentee().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized");
+        }
 
         return progressRepository.findByMatch(match)
                 .stream()
-                .map(p -> modelMapper.map(p, ProgressResponseDTO.class))
+                .map(this::map)
                 .toList();
+    }
+
+    // ====== MAPPER ======
+    private ProgressResponseDTO map(Progress p) {
+        ProgressResponseDTO dto = new ProgressResponseDTO();
+        dto.setId(p.getId());
+        dto.setMatchId(p.getMatch().getId());
+        dto.setGoal(p.getGoal());
+        dto.setCompleted(p.getCompleted());
+        dto.setMentorNotes(p.getMentorNotes());
+        dto.setMenteeNotes(p.getMenteeNotes());
+        return dto;
     }
 }

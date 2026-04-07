@@ -1,0 +1,9 @@
+import java.util.List;
+import com.mentorplatform.dto.MatchingResponseDTO;
+
+public interface MatchingService {
+
+    List<MatchingResponseDTO> findMentors();  // ✅ REQUIRED
+
+    void createMatch(Long mentorId, String menteeEmail);
+}

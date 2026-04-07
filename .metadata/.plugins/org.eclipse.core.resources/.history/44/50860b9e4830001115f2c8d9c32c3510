@@ -1,0 +1,16 @@
+package com.mentorplatform.dto;
+
+import lombok.Data;
+
+@Data
+public class MentorshipMatchDTO {
+    private Long id;
+
+    // Flattened mentor fields (mapped explicitly)
+    private Long mentorId;
+    private String mentorName;
+    private String mentorEmail;
+
+    // No 'mentor' object field needed, OR keep it but mark it skipped
+    // If you keep it, the mapper.skip() above handles it
+}

@@ -1,0 +1,5 @@
+package com.mentorplatform.config;
+
+public class CorsConfig {
+
+}

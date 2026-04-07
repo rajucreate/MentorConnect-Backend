@@ -1,16 +1,24 @@
 package com.mentorplatform.dto;
 
-import lombok.Data;
-
 import java.time.LocalDateTime;
 
+import com.mentorplatform.model.enums.SessionStatus;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 @Data
+@AllArgsConstructor
 public class SessionResponseDTO {
 
-    private Long id;
-    private Long matchId;
+    private Long sessionId;
+    private String mentorName;
+    private String menteeName;
+
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+
     private String meetingLink;
-    private String status;
+
+    private SessionStatus status;
 }

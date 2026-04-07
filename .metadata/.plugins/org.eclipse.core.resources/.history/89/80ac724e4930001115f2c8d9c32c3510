@@ -1,0 +1,103 @@
+package com.mentorplatform.service.impl;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.mentorplatform.dto.MatchingResponseDTO;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.User;
+import com.mentorplatform.model.enums.MatchStatus;
+import com.mentorplatform.model.enums.Role;
+import com.mentorplatform.repository.MentorshipMatchRepository;
+import com.mentorplatform.repository.UserRepository;
+import com.mentorplatform.service.MatchingService;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class MatchingServiceImpl implements MatchingService {
+
+    private final UserRepository userRepository;
+    private final MentorshipMatchRepository mentorshipMatchRepository;
+
+    // ✅ EXISTING METHOD
+    @Override
+    public List<MatchingResponseDTO> findMentors() {
+
+        List<User> mentors = userRepository.findByRole(Role.MENTOR);
+
+        return mentors.stream()
+                .map(user -> new MatchingResponseDTO(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getRole()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    // ✅ NEW METHOD (CRITICAL)
+    @Override
+    public void createMatch(Long mentorId, String menteeEmail) {
+
+        // Fetch mentor
+        User mentor = userRepository.findById(mentorId)
+                .orElseThrow(() -> new RuntimeException("Mentor not found"));
+
+        // Fetch mentee
+        User mentee = userRepository.findByEmail(menteeEmail)
+                .orElseThrow(() -> new RuntimeException("Mentee not found"));
+
+        // Validate roles
+        if (mentor.getRole() != Role.MENTOR) {
+            throw new RuntimeException("Selected user is not a mentor");
+        }
+
+        if (mentee.getRole() != Role.MENTEE) {
+            throw new RuntimeException("Only mentees can create matches");
+        }
+
+        // Create match
+        MentorshipMatch match = new MentorshipMatch();
+        match.setMentor(mentor);
+        match.setMentee(mentee);
+        
+        match.setMatchedAt(LocalDateTime.now());
+        match.setStatus(MatchStatus.ACTIVE);
+        
+        mentorshipMatchRepository.save(match);
+    }
+    
+    @Override
+    public List<MatchingResponseDTO> getMyMatches(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<MentorshipMatch> matches;
+
+        if (user.getRole() == Role.MENTEE) {
+            matches = mentorshipMatchRepository.findByMentee(user);
+        } else if (user.getRole() == Role.MENTOR) {
+            matches = mentorshipMatchRepository.findByMentor(user);
+        } else {
+            throw new RuntimeException("Invalid role");
+        }
+
+        return matches.stream()
+        		.map(match -> new MentorshipMatchDTO(
+        		        match.getId(),
+        		        match.getMentor().getId(),
+        		        match.getMentor().getName(),
+        		        match.getMentor().getEmail(),
+        		        match.getMentee().getId(),
+        		        match.getMentee().getName(),
+        		        match.getStatus()
+        		))
+        		.collect(Collectors.toList())
+    }
+}

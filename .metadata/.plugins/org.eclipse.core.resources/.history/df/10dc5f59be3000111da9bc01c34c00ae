@@ -1,0 +1,13 @@
+package com.mentorplatform.service;
+
+//import org.springframework.security.core.userdetail
+
+import com.mentorplatform.auth.dto.LoginRequestDTO;
+import com.mentorplatform.dto.RegisterRequestDTO;
+
+public interface AuthService {
+
+    String login(LoginRequestDTO request);
+
+    String register(RegisterRequestDTO request);
+}
