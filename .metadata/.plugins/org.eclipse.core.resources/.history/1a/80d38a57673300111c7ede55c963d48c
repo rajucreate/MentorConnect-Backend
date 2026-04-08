@@ -1,0 +1,125 @@
+package com.mentorplatform.service.impl;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+
+import com.mentorplatform.dto.MentorshipMatchDTO;
+import com.mentorplatform.dto.SessionResponseDTO;
+import com.mentorplatform.dto.UserResponseDTO;
+import com.mentorplatform.exception.InvalidOperationException;
+import com.mentorplatform.exception.ResourceNotFoundException;
+import com.mentorplatform.model.MentorshipMatch;
+import com.mentorplatform.model.Session;
+import com.mentorplatform.model.User;
+import com.mentorplatform.model.enums.MatchStatus;
+import com.mentorplatform.model.enums.SessionStatus;
+import com.mentorplatform.repository.MentorshipMatchRepository;
+import com.mentorplatform.repository.SessionRepository;
+import com.mentorplatform.repository.UserRepository;
+import com.mentorplatform.service.AdminService;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class AdminServiceImpl implements AdminService {
+
+    private final UserRepository userRepository;
+    private final MentorshipMatchRepository matchRepository;
+    private final SessionRepository sessionRepository;
+    private final ModelMapper modelMapper;
+
+    // ================= USERS =================
+
+    @Override
+    public List<UserResponseDTO> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(user -> modelMapper.map(user, UserResponseDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteUser(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // ✅ 1. Check sessions via match
+        boolean hasSessions = sessionRepository.findAll().stream()
+                .anyMatch(session ->
+                        session.getMatch().getMentor().getId().equals(userId) ||
+                        session.getMatch().getMentee().getId().equals(userId)
+                );
+
+        if (hasSessions) {
+            throw new InvalidOperationException("User has sessions. Cannot delete.");
+        }
+
+        // ✅ 2. Check ANY matches (not just ACTIVE)
+        boolean hasMatches = matchRepository.findAll().stream()
+                .anyMatch(match ->
+                        match.getMentor().getId().equals(userId) ||
+                        match.getMentee().getId().equals(userId)
+                );
+
+        if (hasMatches) {
+            throw new InvalidOperationException("User has mentorship matches. Cannot delete.");
+        }
+
+        // ✅ 3. Safe delete
+        userRepository.delete(user);
+    }
+    // ================= MATCHES =================
+
+    @Override
+    public List<MentorshipMatchDTO> getAllMatches() {
+        return matchRepository.findAll()
+                .stream()
+                .map(match -> modelMapper.map(match, MentorshipMatchDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void updateMatchStatus(Long matchId, MatchStatus status) {
+
+        MentorshipMatch match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+        // ❗ Prevent invalid transitions
+        if (match.getStatus() == MatchStatus.CANCELLED) {
+            throw new InvalidOperationException("Match already cancelled");
+        }
+
+        match.setStatus(status);
+        matchRepository.save(match);
+    }
+
+    // ================= SESSIONS =================
+
+    @Override
+    public List<SessionResponseDTO> getAllSessions() {
+        return sessionRepository.findAll()
+                .stream()
+                .map(session -> modelMapper.map(session, SessionResponseDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void updateSessionStatus(Long sessionId, SessionStatus status) {
+
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
+
+        // ❗ Prevent invalid transitions
+        if (session.getStatus() == SessionStatus.COMPLETED) {
+            throw new InvalidOperationException("Completed session cannot be modified");
+        }
+
+        session.setStatus(status);
+        sessionRepository.save(session);
+    }
+}
