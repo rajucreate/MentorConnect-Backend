@@ -4,19 +4,15 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.mentorplatform.dto.SessionRequestDTO;
 import com.mentorplatform.dto.SessionResponseDTO;
-import com.mentorplatform.model.User;
 import com.mentorplatform.model.enums.SessionStatus;
 import com.mentorplatform.repository.UserRepository;
 import com.mentorplatform.service.SessionService;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -27,57 +23,41 @@ public class SessionController {
     private final SessionService sessionService;
     private final UserRepository userRepository;
 
-    @PostMapping("/schedule")
-    public ResponseEntity<SessionResponseDTO> scheduleSession(
-            @Valid @RequestBody SessionRequestDTO request) {
-
-        SessionResponseDTO session = sessionService.scheduleSession(
-                request.getMatchId(),
-                request.getStartTime(),
-                request.getEndTime(),
-                request.getMeetingLink()
-        );
-
-        return ResponseEntity.ok(session);
-    }
+    // ✅ MENTEE BOOKS SESSION (NO meeting link)
     @PreAuthorize("hasRole('MENTEE')")
     @PostMapping("/book")
     public ResponseEntity<String> bookSession(
-            @Valid @RequestBody SessionRequestDTO request,
+            @RequestBody SessionRequestDTO request,
             Authentication authentication) {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
         return ResponseEntity.ok(
-                sessionService.bookSession(user.getId(), request)
+                sessionService.bookSession(email, request)
         );
     }
-    
+
+    // ✅ MENTEE - VIEW OWN SESSIONS
     @GetMapping("/my")
     @PreAuthorize("hasRole('MENTEE')")
-    public ResponseEntity<List<SessionResponseDTO>> getMySessions() {
+    public ResponseEntity<List<SessionResponseDTO>> getMySessions(Authentication auth) {
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-
-        return ResponseEntity.ok(sessionService.getMySessions(email));
+        return ResponseEntity.ok(
+                sessionService.getMySessions(auth.getName())
+        );
     }
 
-    // ✅ Mentor
+    // ✅ MENTOR - VIEW SESSIONS
     @GetMapping("/mentor")
     @PreAuthorize("hasRole('MENTOR')")
-    public ResponseEntity<List<SessionResponseDTO>> getMentorSessions() {
+    public ResponseEntity<List<SessionResponseDTO>> getMentorSessions(Authentication auth) {
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-
-        return ResponseEntity.ok(sessionService.getMentorSessions(email));
+        return ResponseEntity.ok(
+                sessionService.getMentorSessions(auth.getName())
+        );
     }
 
-    // ✅ Update status
+    // ✅ MENTOR - APPROVE / REJECT
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('MENTOR','ADMIN')")
     public ResponseEntity<String> updateStatus(
@@ -85,7 +65,17 @@ public class SessionController {
             @RequestParam SessionStatus status) {
 
         sessionService.updateSessionStatus(id, status);
-
         return ResponseEntity.ok("Session status updated");
+    }
+
+    // 🔥 NEW API — MENTOR ADDS MEETING LINK
+    @PutMapping("/{id}/link")
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<String> addMeetingLink(
+            @PathVariable Long id,
+            @RequestParam String meetingLink) {
+
+        sessionService.addMeetingLink(id, meetingLink);
+        return ResponseEntity.ok("Meeting link added");
     }
 }

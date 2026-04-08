@@ -3,10 +3,14 @@ package com.mentorplatform.service.impl;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import com.mentorplatform.dto.MentorshipMatchDTO;
 import com.mentorplatform.dto.SessionResponseDTO;
+import com.mentorplatform.dto.UserResponseDTO;
+import com.mentorplatform.exception.InvalidOperationException;
+import com.mentorplatform.exception.ResourceNotFoundException;
 import com.mentorplatform.model.MentorshipMatch;
 import com.mentorplatform.model.Session;
 import com.mentorplatform.model.User;
@@ -26,63 +30,84 @@ public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final MentorshipMatchRepository matchRepository;
     private final SessionRepository sessionRepository;
+    private final ModelMapper modelMapper;
 
-    // ✅ Users
+    // ================= USERS =================
+
     @Override
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserResponseDTO> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(user -> modelMapper.map(user, UserResponseDTO.class))
+                .collect(Collectors.toList());
     }
 
     @Override
     public void deleteUser(Long userId) {
-        userRepository.deleteById(userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // ❗ Prevent deleting users with active matches
+        boolean hasActiveMatches = matchRepository.findAll().stream()
+                .anyMatch(match ->
+                        (match.getMentor().getId().equals(userId) ||
+                         match.getMentee().getId().equals(userId)) &&
+                        match.getStatus() == MatchStatus.ACTIVE
+                );
+
+        if (hasActiveMatches) {
+            throw new InvalidOperationException("User has active matches. Cannot delete.");
+        }
+
+        userRepository.delete(user);
     }
 
-    // ✅ Matches
+    // ================= MATCHES =================
+
     @Override
     public List<MentorshipMatchDTO> getAllMatches() {
-        return matchRepository.findAll().stream()
-                .map(m -> new MentorshipMatchDTO(
-                        m.getId(),
-                        m.getMentor().getId(),
-                        m.getMentor().getName(),
-                        m.getMentor().getEmail(),
-                        m.getMentee().getId(),
-                        m.getMentee().getName(),
-                        m.getStatus()
-                ))
+        return matchRepository.findAll()
+                .stream()
+                .map(match -> modelMapper.map(match, MentorshipMatchDTO.class))
                 .collect(Collectors.toList());
     }
 
     @Override
     public void updateMatchStatus(Long matchId, MatchStatus status) {
+
         MentorshipMatch match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new RuntimeException("Match not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+        // ❗ Prevent invalid transitions
+        if (match.getStatus() == MatchStatus.CANCELLED) {
+            throw new InvalidOperationException("Match already cancelled");
+        }
 
         match.setStatus(status);
         matchRepository.save(match);
     }
 
-    // ✅ Sessions
+    // ================= SESSIONS =================
+
     @Override
     public List<SessionResponseDTO> getAllSessions() {
-        return sessionRepository.findAll().stream()
-                .map(s -> new SessionResponseDTO(
-                        s.getId(),
-                        s.getMatch().getMentor().getName(),
-                        s.getMatch().getMentee().getName(),
-                        s.getStartTime(),
-                        s.getEndTime(),
-                        s.getMeetingLink(),
-                        s.getStatus()
-                ))
+        return sessionRepository.findAll()
+                .stream()
+                .map(session -> modelMapper.map(session, SessionResponseDTO.class))
                 .collect(Collectors.toList());
     }
 
     @Override
     public void updateSessionStatus(Long sessionId, SessionStatus status) {
+
         Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
+
+        // ❗ Prevent invalid transitions
+        if (session.getStatus() == SessionStatus.COMPLETED) {
+            throw new InvalidOperationException("Completed session cannot be modified");
+        }
 
         session.setStatus(status);
         sessionRepository.save(session);

@@ -11,11 +11,12 @@ import java.util.List;
 
 public interface SessionService {
 
-	SessionResponseDTO scheduleSession(Long matchId, LocalDateTime startTime, LocalDateTime endTime, String meetingLink);
-	String bookSession(Long userId, SessionRequestDTO request);
+	String bookSession(String email, SessionRequestDTO request);
     List<SessionResponseDTO> getMySessions(String email);
 
     List<SessionResponseDTO> getMentorSessions(String email);
 
     public void updateSessionStatus(Long sessionId, SessionStatus status);
+    
+    public void addMeetingLink(Long sessionId, String link);
 }

@@ -1,0 +1,22 @@
+package com.mentorplatform.service;
+
+import java.time.LocalDateTime;
+
+import com.mentorplatform.dto.SessionRequestDTO;
+import com.mentorplatform.dto.SessionResponseDTO;
+import com.mentorplatform.model.Session;
+import com.mentorplatform.model.enums.SessionStatus;
+
+import java.util.List;
+
+public interface SessionService {
+
+	
+    List<SessionResponseDTO> getMySessions(String email);
+
+    List<SessionResponseDTO> getMentorSessions(String email);
+
+    public void updateSessionStatus(Long sessionId, SessionStatus status);
+    
+    public void addMeetingLink(Long sessionId, String link);
+}

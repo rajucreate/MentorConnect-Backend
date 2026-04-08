@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.mentorplatform.dto.MentorshipMatchDTO;
 import com.mentorplatform.dto.SessionResponseDTO;
-import com.mentorplatform.model.User;
+import com.mentorplatform.dto.UserResponseDTO;
 import com.mentorplatform.model.enums.MatchStatus;
 import com.mentorplatform.model.enums.SessionStatus;
 import com.mentorplatform.service.AdminService;
@@ -23,25 +23,25 @@ public class AdminController {
 
     private final AdminService adminService;
 
-    // ✅ Users
+    // ✅ USERS
     @GetMapping("/users")
-    public List<User> getAllUsers() {
-        return adminService.getAllUsers();
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+        return ResponseEntity.ok(adminService.getAllUsers());
     }
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         adminService.deleteUser(id);
-        return ResponseEntity.ok("User deleted");
+        return ResponseEntity.ok("User deleted successfully");
     }
 
-    // ✅ Matches
+    // ✅ MATCHES
     @GetMapping("/matches")
-    public List<MentorshipMatchDTO> getAllMatches() {
-        return adminService.getAllMatches();
+    public ResponseEntity<List<MentorshipMatchDTO>> getAllMatches() {
+        return ResponseEntity.ok(adminService.getAllMatches());
     }
 
-    @PutMapping("/match/{id}/status")
+    @PutMapping("/matches/{id}/status")
     public ResponseEntity<String> updateMatchStatus(
             @PathVariable Long id,
             @RequestParam MatchStatus status) {
@@ -50,13 +50,13 @@ public class AdminController {
         return ResponseEntity.ok("Match status updated");
     }
 
-    // ✅ Sessions
+    // ✅ SESSIONS
     @GetMapping("/sessions")
-    public List<SessionResponseDTO> getAllSessions() {
-        return adminService.getAllSessions();
+    public ResponseEntity<List<SessionResponseDTO>> getAllSessions() {
+        return ResponseEntity.ok(adminService.getAllSessions());
     }
 
-    @PutMapping("/session/{id}/status")
+    @PutMapping("/sessions/{id}/status")
     public ResponseEntity<String> updateSessionStatus(
             @PathVariable Long id,
             @RequestParam SessionStatus status) {

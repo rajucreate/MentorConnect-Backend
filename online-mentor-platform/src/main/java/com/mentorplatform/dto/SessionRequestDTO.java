@@ -7,6 +7,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
+
 public class SessionRequestDTO {
 
     @NotNull(message = "Match ID is required")
@@ -18,6 +19,4 @@ public class SessionRequestDTO {
     @NotNull(message = "End time is required")
     private LocalDateTime endTime;
 
-    @NotBlank(message = "Meeting link is required")
-    private String meetingLink;
 }
