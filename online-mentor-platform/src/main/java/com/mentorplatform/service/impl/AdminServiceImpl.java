@@ -69,7 +69,16 @@ public class AdminServiceImpl implements AdminService {
     public List<MentorshipMatchDTO> getAllMatches() {
         return matchRepository.findAll()
                 .stream()
-                .map(match -> modelMapper.map(match, MentorshipMatchDTO.class))
+            .map(match -> new MentorshipMatchDTO(
+                match.getId(),
+                match.getMentor() != null ? match.getMentor().getId() : null,
+                match.getMentor() != null ? match.getMentor().getName() : null,
+                match.getMentor() != null ? match.getMentor().getEmail() : null,
+                match.getMentee() != null ? match.getMentee().getId() : null,
+                match.getMentee() != null ? match.getMentee().getName() : null,
+                match.getMentee() != null ? match.getMentee().getEmail() : null,
+                match.getStatus()
+            ))
                 .collect(Collectors.toList());
     }
 
@@ -94,7 +103,19 @@ public class AdminServiceImpl implements AdminService {
     public List<SessionResponseDTO> getAllSessions() {
         return sessionRepository.findAll()
                 .stream()
-                .map(session -> modelMapper.map(session, SessionResponseDTO.class))
+            .map(session -> new SessionResponseDTO(
+                session.getId(),
+                session.getMatch() != null && session.getMatch().getMentor() != null
+                    ? session.getMatch().getMentor().getName()
+                    : null,
+                session.getMatch() != null && session.getMatch().getMentee() != null
+                    ? session.getMatch().getMentee().getName()
+                    : null,
+                session.getStartTime(),
+                session.getEndTime(),
+                session.getMeetingLink(),
+                session.getStatus()
+            ))
                 .collect(Collectors.toList());
     }
 

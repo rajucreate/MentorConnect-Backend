@@ -20,6 +20,7 @@ public class MentorshipMatchDTO {
     // Mentee info
     private Long menteeId;
     private String menteeName;
+    private String menteeEmail;
 
     // Match metadata
     private MatchStatus status;

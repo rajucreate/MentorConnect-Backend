@@ -41,7 +41,7 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllMatches());
     }
 
-    @PutMapping("/matches/{id}/status")
+    @PutMapping("/match/{id}/status")
     public ResponseEntity<String> updateMatchStatus(
             @PathVariable Long id,
             @RequestParam MatchStatus status) {
@@ -56,7 +56,7 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllSessions());
     }
 
-    @PutMapping("/sessions/{id}/status")
+    @PutMapping("/session/{id}/status")
     public ResponseEntity<String> updateSessionStatus(
             @PathVariable Long id,
             @RequestParam SessionStatus status) {

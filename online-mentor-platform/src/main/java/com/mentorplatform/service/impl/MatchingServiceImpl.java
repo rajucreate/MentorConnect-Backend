@@ -97,6 +97,7 @@ public class MatchingServiceImpl implements MatchingService {
                         match.getMentor().getEmail(),
                         match.getMentee().getId(),
                         match.getMentee().getName(),
+                        match.getMentee().getEmail(),
                         match.getStatus()
                 ))
                 .collect(Collectors.toList());

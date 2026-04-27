@@ -1,7 +1,0 @@
-package com.mentorplatform.auth.dto;
-
-@Data
-@AllArgsConstructor
-public class AuthResponseDTO {
-    private String token;
-}
